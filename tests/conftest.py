@@ -7,7 +7,6 @@ from selenium.webdriver.chrome.service import Service
 def base_url():
     return os.environ.get("BASE_URL", "http://13.63.130.174:8300")
 
-
 @pytest.fixture()
 def driver():
     options = webdriver.ChromeOptions()
