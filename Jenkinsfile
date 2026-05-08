@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent any 
     
     stages {
         stage('Clone') {
@@ -12,28 +12,33 @@ pipeline {
             agent {
                 docker {
                     image 'markhobson/maven-chrome:jdk-21'
-                    args '-v /tmp:/tmp' 
+                    args '-u root' 
                 }
             }
             steps {
-                // This runs your 15+ Selenium tests
+                // Running your Selenium tests
                 sh 'mvn test' 
             }
         }
     }
 
-   post {
+    post {
         always {
-            emailext (
-                subject: "Build ${currentBuild.result}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """Build: ${env.BUILD_URL}
-                         Status: ${currentBuild.result}
-                         Commit: ${env.GIT_COMMIT}""",
-                recipientProviders: [
-                    [$class: 'DevelopersRecipientProvider'],
-                    [$class: 'CulpritsRecipientProvider']
-                ]
-            )
+            script {
+                // Grabbing the committer's email dynamically
+                def committerEmail = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
+                
+                if (committerEmail) {
+                    emailext (
+                        subject: "Assignment 3: Build ${currentBuild.result} - ${env.JOB_NAME}",
+                        body: "The pipeline for commit ${env.GIT_COMMIT} finished with status: ${currentBuild.result}. View build here: ${env.BUILD_URL}",
+                        to: "${committerEmail}",
+                        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+                    )
+                } else {
+                    echo "Could not find committer email. Skipping email notification."
+                }
+            }
         }
     }
 }
