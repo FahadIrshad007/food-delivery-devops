@@ -1,64 +1,39 @@
 package com.comsats.devops.tests;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import io.github.bonigarcia.wdm.WebDriverManager;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
 
-public class LoginTests extends BaseTest {
+public class BaseTest {
+    protected WebDriver driver;
+    
+    // Updated with your specific EC2 IP
+    protected final String BASE_URL = "http://16.16.149.7:3000"; 
+    protected final String API_URL = "http://16.16.149.7:5000";
 
-    @Test(priority = 1, description = "Verify login page loads successfully")
-    public void testLoginPageLoads() {
-        driver.get(BASE_URL + "/login");
-        WebElement loginForm = driver.findElement(By.tagName("form"));
-        Assert.assertTrue(loginForm.isDisplayed(), "Login form should be visible");
+    @BeforeMethod
+    public void setUp() {
+        WebDriverManager.chromedriver().setup();
+
+        ChromeOptions options = new ChromeOptions();
+        
+        // These flags are mandatory for the Jenkins 'Test' stage on EC2
+        options.addArguments("--headless=new"); 
+        options.addArguments("--no-sandbox"); 
+        options.addArguments("--disable-dev-shm-usage"); 
+        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--remote-allow-origins=*");
+
+        driver = new ChromeDriver(options);
     }
 
-    @Test(priority = 2, description = "Verify valid login credentials work")
-    public void testValidLogin() {
-        driver.get(BASE_URL + "/login");
-        driver.findElement(By.id("email")).sendKeys("test@example.com");
-        driver.findElement(By.id("password")).sendKeys("password123");
-        driver.findElement(By.cssSelector("button[type='submit']")).click();
-        
-        try { Thread.sleep(2000); } catch (InterruptedException e) { e.printStackTrace(); }
-        
-        String currentUrl = driver.getCurrentUrl();
-        Assert.assertTrue(currentUrl.contains("/") || currentUrl.contains("/home"), 
-            "Should redirect to home after login");
-    }
-
-    @Test(priority = 3, description = "Verify invalid login shows error message")
-    public void testInvalidLogin() {
-        driver.get(BASE_URL + "/login");
-        driver.findElement(By.id("email")).sendKeys("wrong@example.com");
-        driver.findElement(By.id("password")).sendKeys("wrongpassword");
-        driver.findElement(By.cssSelector("button[type='submit']")).click();
-        
-        try { Thread.sleep(1000); } catch (InterruptedException e) { e.printStackTrace(); }
-        
-        // Check for error toast or message
-        String pageSource = driver.getPageSource();
-        Assert.assertTrue(pageSource.contains("Invalid") || pageSource.contains("Error") || 
-                         pageSource.contains("incorrect") || pageSource.contains("Invalid credentials"),
-            "Error message should be displayed for invalid login");
-    }
-
-    @Test(priority = 4, description = "Verify empty fields validation")
-    public void testEmptyFieldsValidation() {
-        driver.get(BASE_URL + "/login");
-        driver.findElement(By.cssSelector("button[type='submit']")).click();
-        
-        // HTML5 validation or toast
-        WebElement emailField = driver.findElement(By.id("email"));
-        String validationMsg = emailField.getAttribute("validationMessage");
-        
-        if (validationMsg != null && !validationMsg.isEmpty()) {
-            Assert.assertFalse(validationMsg.isEmpty(), "Should show HTML5 validation");
-        } else {
-            String pageSource = driver.getPageSource();
-            Assert.assertTrue(pageSource.contains("required") || pageSource.contains("empty") ||
-                             pageSource.contains("fill"), "Should show validation for empty fields");
+    @AfterMethod
+    public void tearDown() {
+        if (driver != null) {
+            driver.quit();
         }
     }
 }
