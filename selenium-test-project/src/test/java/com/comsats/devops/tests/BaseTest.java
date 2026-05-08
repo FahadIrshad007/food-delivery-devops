@@ -16,11 +16,11 @@ public class BaseTest {
 
     @BeforeMethod
     public void setUp() {
-        WebDriverManager.chromedriver().setup();
+        // Comment this out because the Docker image already provides the binary
+        // WebDriverManager.chromedriver().setup();
 
         ChromeOptions options = new ChromeOptions();
         
-        // These flags are mandatory for the Jenkins 'Test' stage on EC2
         options.addArguments("--headless=new"); 
         options.addArguments("--no-sandbox"); 
         options.addArguments("--disable-dev-shm-usage"); 
