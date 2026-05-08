@@ -23,6 +23,15 @@ def wait_for_all(driver, by, selector, timeout=DEFAULT_TIMEOUT):
     )
 
 
+def safe_click(driver, element):
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
+    try:
+        WebDriverWait(driver, DEFAULT_TIMEOUT).until(lambda d: element.is_enabled())
+        element.click()
+    except Exception:
+        driver.execute_script("arguments[0].click();", element)
+
+
 def get_food_items(driver):
     wait_for_visible(driver, By.CSS_SELECTOR, ".food-display-list")
     return driver.find_elements(By.CSS_SELECTOR, ".food-item")
@@ -34,12 +43,7 @@ def add_one_item_to_cart(driver):
         pytest.skip("No food items available to add to cart.")
     first = items[0]
     add_button = first.find_element(By.CSS_SELECTOR, "img.add")
-    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", add_button)
-    WebDriverWait(driver, DEFAULT_TIMEOUT).until(EC.element_to_be_clickable(add_button))
-    try:
-        add_button.click()
-    except Exception:
-        driver.execute_script("arguments[0].click();", add_button)
+    safe_click(driver, add_button)
     WebDriverWait(driver, DEFAULT_TIMEOUT).until(
         lambda d: len(first.find_elements(By.CSS_SELECTOR, ".food-item-counter")) > 0
     )
@@ -110,7 +114,7 @@ def test_add_to_cart_increases_quantity(driver, base_url):
     open_home(driver, base_url)
     first = add_one_item_to_cart(driver)
     buttons = first.find_elements(By.CSS_SELECTOR, ".food-item-counter img")
-    buttons[-1].click()
+    safe_click(driver, buttons[-1])
     WebDriverWait(driver, DEFAULT_TIMEOUT).until(
         lambda d: first.find_element(By.CSS_SELECTOR, ".food-item-counter p").text.strip() == "2"
     )
@@ -136,6 +140,7 @@ def test_cart_totals_section_present(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
     driver.get(base_url + "/cart")
+    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
     totals = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-total h2")
     assert "Cart Totals" in totals.text
 
@@ -144,6 +149,7 @@ def test_cart_checkout_button_text(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
     driver.get(base_url + "/cart")
+    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
     checkout_button = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-total button")
     assert checkout_button.text.strip() == "PROCEED TO CHECKOUT"
 
@@ -152,6 +158,7 @@ def test_promocode_input_present(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
     driver.get(base_url + "/cart")
+    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
     promo = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-promocode-input input")
     assert promo.get_attribute("placeholder").lower() == "promo code"
 
@@ -160,6 +167,7 @@ def test_promocode_submit_button_text(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
     driver.get(base_url + "/cart")
+    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
     submit_button = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-promocode-input button")
     assert submit_button.text.strip() == "Submit"
 
@@ -168,10 +176,11 @@ def test_remove_item_from_cart(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
     driver.get(base_url + "/cart")
+    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
     items = wait_for_all(driver, By.CSS_SELECTOR, ".cart-items-item")
     assert len(items) > 0
     remove_button = items[0].find_element(By.CSS_SELECTOR, ".cross")
-    remove_button.click()
+    safe_click(driver, remove_button)
     WebDriverWait(driver, DEFAULT_TIMEOUT).until(
         lambda d: len(d.find_elements(By.CSS_SELECTOR, ".cart-items-item")) == 0
     )
@@ -181,6 +190,7 @@ def test_checkout_without_login_redirects_to_cart(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
     driver.get(base_url + "/cart")
+    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
     checkout_button = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-total button")
     checkout_button.click()
     WebDriverWait(driver, DEFAULT_TIMEOUT).until(EC.url_contains("/cart"))
