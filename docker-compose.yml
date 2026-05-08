@@ -28,7 +28,7 @@ services:
     build: 
       context: ./frontend
       args:
-        VITE_BACKEND_URL: http://localhost:4000
+        VITE_BACKEND_URL: http://13.63.130.174:4000
     ports:
       - "80:80"
     depends_on:
@@ -39,7 +39,7 @@ services:
     build: 
       context: ./admin
       args:
-        VITE_BACKEND_URL: http://localhost:4000
+        VITE_BACKEND_URL: http://13.63.130.174:4000
     ports:
       - "8081:80"
     depends_on:
