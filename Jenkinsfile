@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        APP_URL = 'http://13.63.130.174:8300'
+        APP_URL = 'http://13.63.130.174/'
         COMPOSE = 'docker compose -f docker-compose.yml -p foodapp'
     }
 
