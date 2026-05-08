@@ -59,24 +59,44 @@ pipeline {
 
                 archiveArtifacts artifacts: 'selenium-tests/report.html', allowEmptyArchive: true
 
-                int total = 0, failures = 0, skipped = 0, passed = 0
+                def statsJson = sh(
+                    script: '''python3 - <<'PY'
+import json
+import xml.etree.ElementTree as ET
 
-                def xmlLine = sh(
-                    script: 'grep -h "<testsuite" selenium-tests/results.xml 2>/dev/null || true',
+path = "selenium-tests/results.xml"
+def parse_attrs(elem):
+    tests = int(elem.attrib.get("tests", 0))
+    failures = int(elem.attrib.get("failures", 0))
+    errors = int(elem.attrib.get("errors", 0))
+    skipped = int(elem.attrib.get("skipped", 0))
+    return tests, failures + errors, skipped
+
+try:
+    tree = ET.parse(path)
+    root = tree.getroot()
+    if root.tag == "testsuites":
+        total = failed = skipped = 0
+        for suite in root.findall("testsuite"):
+            t, f, s = parse_attrs(suite)
+            total += t
+            failed += f
+            skipped += s
+    else:
+        total, failed, skipped = parse_attrs(root)
+    passed = max(total - failed - skipped, 0)
+    print(json.dumps({"total": total, "failed": failed, "skipped": skipped, "passed": passed}))
+except Exception:
+    print(json.dumps({"total": 0, "failed": 0, "skipped": 0, "passed": 0}))
+PY''',
                     returnStdout: true
                 ).trim()
 
-                if (xmlLine) {
-                    def t = (xmlLine =~ /tests="(\\d+)"/)
-                    def f = (xmlLine =~ /failures="(\\d+)"/)
-                    def s = (xmlLine =~ /skipped="(\\d+)"/)
-
-                    if (t) total = t[0][1] as int
-                    if (f) failures = f[0][1] as int
-                    if (s) skipped = s[0][1] as int
-
-                    passed = Math.max(total - failures - skipped, 0)
-                }
+                def stats = new groovy.json.JsonSlurperClassic().parseText(statsJson)
+                int total = stats.total as int
+                int failures = stats.failed as int
+                int skipped = stats.skipped as int
+                int passed = stats.passed as int
 
                 emailext(
                     to: committer,
