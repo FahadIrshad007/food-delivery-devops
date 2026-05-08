@@ -19,7 +19,7 @@ pipeline {
             }
             steps {
                 // Moving into the subfolder where pom.xml exists before running tests
-                sh 'cd selenium-test-project && mvn test' 
+                sh 'cd selenium-test-project && mvn clean test -U'
             }
         }
     }
