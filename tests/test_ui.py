@@ -34,7 +34,12 @@ def add_one_item_to_cart(driver):
         pytest.skip("No food items available to add to cart.")
     first = items[0]
     add_button = first.find_element(By.CSS_SELECTOR, "img.add")
-    add_button.click()
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", add_button)
+    WebDriverWait(driver, DEFAULT_TIMEOUT).until(EC.element_to_be_clickable(add_button))
+    try:
+        add_button.click()
+    except Exception:
+        driver.execute_script("arguments[0].click();", add_button)
     WebDriverWait(driver, DEFAULT_TIMEOUT).until(
         lambda d: len(first.find_elements(By.CSS_SELECTOR, ".food-item-counter")) > 0
     )
