@@ -59,9 +59,8 @@ pipeline {
 
                 archiveArtifacts artifacts: 'selenium-tests/report.html', allowEmptyArchive: true
 
-                def statsJson = sh(
+                def statsLine = sh(
                     script: '''python3 - <<'PY'
-import json
 import xml.etree.ElementTree as ET
 
 path = "selenium-tests/results.xml"
@@ -85,18 +84,18 @@ try:
     else:
         total, failed, skipped = parse_attrs(root)
     passed = max(total - failed - skipped, 0)
-    print(json.dumps({"total": total, "failed": failed, "skipped": skipped, "passed": passed}))
+    print(f"total={total} failed={failed} skipped={skipped} passed={passed}")
 except Exception:
-    print(json.dumps({"total": 0, "failed": 0, "skipped": 0, "passed": 0}))
+    print("total=0 failed=0 skipped=0 passed=0")
 PY''',
                     returnStdout: true
                 ).trim()
 
-                def stats = new groovy.json.JsonSlurperClassic().parseText(statsJson)
-                int total = stats.total as int
-                int failures = stats.failed as int
-                int skipped = stats.skipped as int
-                int passed = stats.passed as int
+                def stats = statsLine.tokenize(' ')
+                int total = (stats.find { it.startsWith('total=') } ?: 'total=0').split('=')[1] as int
+                int failures = (stats.find { it.startsWith('failed=') } ?: 'failed=0').split('=')[1] as int
+                int skipped = (stats.find { it.startsWith('skipped=') } ?: 'skipped=0').split('=')[1] as int
+                int passed = (stats.find { it.startsWith('passed=') } ?: 'passed=0').split('=')[1] as int
 
                 emailext(
                     to: committer,
