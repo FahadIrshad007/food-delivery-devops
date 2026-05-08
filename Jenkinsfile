@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         APP_URL = 'http://13.63.130.174:8300'
-        COMPOSE = 'docker-compose -f docker-compose.yml -p foodapp'
+        COMPOSE = 'docker compose -f docker-compose.yml -p foodapp'
     }
 
     stages {
