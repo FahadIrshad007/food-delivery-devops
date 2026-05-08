@@ -1,12 +1,20 @@
 version: '3.8'
 
 services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
   backend:
     build: ./backend
     environment:
-      MONGO_URL: ${MONGO_URL}
-      JWT_SECRET: ${JWT_SECRET}
-      SALT: ${SALT}
+      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017/foodapp}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
+      SALT: ${SALT:-10}
       PORT: 4000
     ports:
       - "4000:4000"
@@ -36,3 +44,6 @@ services:
       - "8081:80"
     depends_on:
       - backend
+
+volumes:
+  mongo_data:
