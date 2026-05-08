@@ -10,7 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Login from "./components/Login/Login";
 
 const App = () => {
-  const url = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+  const url = import.meta.env.VITE_BACKEND_URL || "http://13.63.130.174:8081";
   return (
     <div>
       <ToastContainer />
