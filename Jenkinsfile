@@ -1,11 +1,15 @@
 pipeline {
     agent any 
-    
-    stages {
+
+    stages { // <--- Added this required wrapper
         stage('Clone') {
             steps {
-                // Ensure we are pulling the latest from the main branch
-                git branch: 'main', url: 'https://github.com/FahadIrshad007/food-delivery-devops.git'
+                // WipeWorkspace ensures we don't get "Permission Denied" from previous root runs
+                checkout([$class: 'GitSCM', 
+                    branches: [[name: 'main']], 
+                    extensions: [[$class: 'WipeWorkspace']], 
+                    userRemoteConfigs: [[url: 'https://github.com/FahadIrshad007/food-delivery-devops.git']]
+                ])
             }
         }
 
@@ -13,7 +17,6 @@ pipeline {
             agent {
                 docker {
                     image 'markhobson/maven-chrome:jdk-21'
-                    // -u root is essential to avoid the "Could not create local repository" error
                     args '-u root' 
                 }
             }
@@ -22,12 +25,12 @@ pipeline {
                 sh 'cd selenium-test-project && mvn clean test -U'
             }
         }
-    }
+    } // <--- End of stages block
 
     post {
         always {
             script {
-                // This captures the email of the person who made the commit (Fahad or Qasim)
+                // Capture the email of the person who made the commit (Fahad or Qasim)
                 def committerEmail = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
                 
                 if (committerEmail) {
