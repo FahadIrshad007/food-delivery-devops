@@ -42,7 +42,6 @@ This repository hosts the source code for TOMATO, a dynamic food ordering websit
 - Login Popup
 
 ## Run Locally
-
 Clone the project
 
 ```bash
