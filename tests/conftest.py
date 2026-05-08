@@ -5,7 +5,7 @@ from selenium.webdriver.chrome.service import Service
 
 @pytest.fixture(scope="session")
 def base_url():
-    return os.environ.get("BASE_URL", "http://13.63.130.174:8300")
+    return os.environ.get("BASE_URL", "http://13.63.130.174/")
 
 
 @pytest.fixture()
