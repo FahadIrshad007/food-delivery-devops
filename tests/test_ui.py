@@ -37,6 +37,12 @@ def get_food_items(driver):
     return driver.find_elements(By.CSS_SELECTOR, ".food-item")
 
 
+def go_to_cart(driver):
+    cart_link = wait_for_visible(driver, By.CSS_SELECTOR, "a[href='/cart']")
+    safe_click(driver, cart_link)
+    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
+
+
 def add_one_item_to_cart(driver):
     items = get_food_items(driver)
     if not items:
@@ -139,8 +145,7 @@ def test_navigate_to_cart_page(driver, base_url):
 def test_cart_totals_section_present(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
-    driver.get(base_url + "/cart")
-    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
+    go_to_cart(driver)
     totals = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-total h2")
     assert "Cart Totals" in totals.text
 
@@ -148,8 +153,7 @@ def test_cart_totals_section_present(driver, base_url):
 def test_cart_checkout_button_text(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
-    driver.get(base_url + "/cart")
-    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
+    go_to_cart(driver)
     checkout_button = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-total button")
     assert checkout_button.text.strip() == "PROCEED TO CHECKOUT"
 
@@ -157,8 +161,7 @@ def test_cart_checkout_button_text(driver, base_url):
 def test_promocode_input_present(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
-    driver.get(base_url + "/cart")
-    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
+    go_to_cart(driver)
     promo = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-promocode-input input")
     assert promo.get_attribute("placeholder").lower() == "promo code"
 
@@ -166,8 +169,7 @@ def test_promocode_input_present(driver, base_url):
 def test_promocode_submit_button_text(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
-    driver.get(base_url + "/cart")
-    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
+    go_to_cart(driver)
     submit_button = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-promocode-input button")
     assert submit_button.text.strip() == "Submit"
 
@@ -175,8 +177,7 @@ def test_promocode_submit_button_text(driver, base_url):
 def test_remove_item_from_cart(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
-    driver.get(base_url + "/cart")
-    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
+    go_to_cart(driver)
     items = wait_for_all(driver, By.CSS_SELECTOR, ".cart-items-item")
     assert len(items) > 0
     remove_button = items[0].find_element(By.CSS_SELECTOR, ".cross")
@@ -189,8 +190,7 @@ def test_remove_item_from_cart(driver, base_url):
 def test_checkout_without_login_redirects_to_cart(driver, base_url):
     open_home(driver, base_url)
     add_one_item_to_cart(driver)
-    driver.get(base_url + "/cart")
-    wait_for_visible(driver, By.CSS_SELECTOR, ".cart")
+    go_to_cart(driver)
     checkout_button = wait_for_visible(driver, By.CSS_SELECTOR, ".cart-total button")
     checkout_button.click()
     WebDriverWait(driver, DEFAULT_TIMEOUT).until(EC.url_contains("/cart"))

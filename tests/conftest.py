@@ -27,8 +27,8 @@ def driver():
         service = Service()
 
     driver = webdriver.Chrome(service=service, options=options)
-    driver.set_page_load_timeout(20)
-    driver.set_script_timeout(20)
+    driver.set_page_load_timeout(10)
+    driver.set_script_timeout(10)
     driver.set_window_size(1280, 900)
     yield driver
     driver.quit()
