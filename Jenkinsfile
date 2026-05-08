@@ -1,51 +1,103 @@
 pipeline {
-    agent any 
+    agent any
 
-    stages { // <--- Added this required wrapper
-        stage('Clone') {
+    environment {
+        APP_URL = 'http://13.63.130.174:8300'
+        COMPOSE = 'docker-compose -f docker-compose.yml -p foodapp'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+
+        stage('Deploy Application') {
             steps {
-                // WipeWorkspace ensures we don't get "Permission Denied" from previous root runs
-                checkout([$class: 'GitSCM', 
-                    branches: [[name: 'main']], 
-                    extensions: [[$class: 'WipeWorkspace']], 
-                    userRemoteConfigs: [[url: 'https://github.com/FahadIrshad007/food-delivery-devops.git']]
-                ])
+                sh '''
+                    $COMPOSE down 2>/dev/null || true
+                    $COMPOSE up -d
+                    sleep 15
+                '''
             }
         }
 
-        stage('Test') {
-            agent {
-                docker {
-                    image 'bilal888/selenium-test:latest'
-                    args '-u root' 
-                }
-            }
+        stage('Run Selenium Tests') {
             steps {
-                // Run pytest Selenium tests from the repo
-                sh 'pytest -q tests'
+                sh '''
+                    mkdir -p selenium-tests
+                    docker run --rm --network host \
+                        -e BASE_URL=$APP_URL \
+                        -v ${WORKSPACE}/tests:/tests \
+                        -v ${WORKSPACE}/selenium-tests:/results \
+                        -w /tests \
+                        bilal888/selenium-test:latest \
+                        pytest -v \
+                        --html=/results/report.html \
+                        --self-contained-html \
+                        --junitxml=/results/results.xml \
+                        --tb=short
+                '''
             }
         }
-    } // <--- End of stages block
+
+        stage('Publish Test Results') {
+            steps {
+                junit '**/selenium-tests/results.xml'
+            }
+        }
+    }
 
     post {
         always {
             script {
-                // Capture the email of the person who made the commit (Fahad or Qasim)
-                def committerEmail = sh(script: "git log -1 --pretty=format:'%ae'", returnStdout: true).trim()
-                
-                if (committerEmail) {
-                    emailext (
-                        subject: "Assignment 3: Build ${currentBuild.result} - ${env.JOB_NAME}",
-                        body: """<p>The pipeline for commit ${env.GIT_COMMIT} finished with status: <b>${currentBuild.result}</b>.</p>
-                                 <p>Check the full console output here: <a href="${env.BUILD_URL}">${env.BUILD_URL}</a></p>""",
-                        mimeType: 'text/html',
-                        to: "${committerEmail}",
-                        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-                    )
-                } else {
-                    echo "Dynamic email detection failed. No notification sent."
+                sh "git config --global --add safe.directory ${env.WORKSPACE}"
+
+                def committer = sh(
+                    script: "git log -1 --pretty=format:'%ae' || echo ''",
+                    returnStdout: true
+                ).trim() ?: 'businessfahad123@gmail.com'
+
+                archiveArtifacts artifacts: 'selenium-tests/report.html', allowEmptyArchive: true
+
+                int total = 0, failures = 0, skipped = 0, passed = 0
+
+                def xmlLine = sh(
+                    script: 'grep -h "<testsuite" selenium-tests/results.xml 2>/dev/null || true',
+                    returnStdout: true
+                ).trim()
+
+                if (xmlLine) {
+                    def t = (xmlLine =~ /tests="(\\d+)"/)
+                    def f = (xmlLine =~ /failures="(\\d+)"/)
+                    def s = (xmlLine =~ /skipped="(\\d+)"/)
+
+                    if (t) total = t[0][1] as int
+                    if (f) failures = f[0][1] as int
+                    if (s) skipped = s[0][1] as int
+
+                    passed = Math.max(total - failures - skipped, 0)
                 }
+
+                emailext(
+                    to: committer,
+                    subject: "Build ${currentBuild.result}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: """
+Test Summary (Build #${env.BUILD_NUMBER})
+
+Total Tests:   ${total}
+Passed:        ${passed}
+Failed:        ${failures}
+Skipped:       ${skipped}
+
+Build URL: ${env.BUILD_URL}
+Report: ${env.BUILD_URL}artifact/selenium-tests/report.html
+""",
+                    attachLog: true,
+                    attachmentsPattern: 'selenium-tests/report.html'
+                )
             }
+
+            sh "${COMPOSE} down || true"
         }
     }
 }
