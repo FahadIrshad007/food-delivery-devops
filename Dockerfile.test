@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+# Install Chromium + ChromeDriver once
+RUN apt-get update && apt-get install -y \
+    wget gnupg unzip \
+    chromium \
+    chromium-driver \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python deps
+RUN pip install selenium pytest pytest-html webdriver-manager
+
+WORKDIR /tests

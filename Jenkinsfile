@@ -16,13 +16,13 @@ pipeline {
         stage('Test') {
             agent {
                 docker {
-                    image 'markhobson/maven-chrome:jdk-21'
+                    image 'bilal888/selenium-test:latest'
                     args '-u root' 
                 }
             }
             steps {
-                // Moving into the subfolder where pom.xml exists before running tests
-                sh 'cd selenium-test-project && mvn clean test -U'
+                // Run pytest Selenium tests from the repo
+                sh 'pytest -q tests'
             }
         }
     } // <--- End of stages block
