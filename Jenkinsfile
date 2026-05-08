@@ -22,13 +22,17 @@ pipeline {
         }
     }
 
-    post {
+   post {
         always {
-            // Grading Requirement: Email results back to the person who pushed code
             emailext (
-                subject: "Assignment 3 Test Results: ${currentBuild.fullDisplayName}",
-                body: "The test stage finished with status: ${currentBuild.result}. Please check Jenkins at http://16.16.149.7:8080 for details.",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider']]
+                subject: "Build ${currentBuild.result}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """Build: ${env.BUILD_URL}
+                         Status: ${currentBuild.result}
+                         Commit: ${env.GIT_COMMIT}""",
+                recipientProviders: [
+                    [$class: 'DevelopersRecipientProvider'],
+                    [$class: 'CulpritsRecipientProvider']
+                ]
             )
         }
     }
