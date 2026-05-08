@@ -1,0 +1,13 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="DevOpsTestSuite" parallel="false">
+    <test name="SeleniumHeadlessTests">
+        <classes>
+            <class name="com.comsats.devops.tests.BaseTest"/>
+            <class name="com.comsats.devops.tests.LoginTests"/>
+            <class name="com.comsats.devops.tests.NavigationTests"/>
+            <class name="com.comsats.devops.tests.FoodTests"/>
+            <class name="com.comsats.devops.tests.CartTests"/>
+            <class name="com.comsats.devops.tests.IntegrationTests"/>
+        </classes>
+    </test>
+</suite>

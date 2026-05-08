@@ -1,0 +1,24 @@
+# Level 1 Solution: Basic Node.js Dockerfile
+
+FROM node:20-alpine
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy package files first (The "*" matches both package.json and package-lock.json)
+COPY package*.json ./
+
+# Install dependencies (Use "npm install" not "npm run install")
+RUN npm install
+
+# Copy the rest of the source code
+# The first "." is the local source (on your computer)
+# The second "." is the destination (the WORKDIR in the container)
+COPY . .
+
+# Expose the port
+EXPOSE 3000
+
+# Start the application
+# CMD is the command that runs when the container starts
+CMD ["node", "index.js"]

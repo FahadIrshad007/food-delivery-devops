@@ -1,0 +1,31 @@
+# Level 2 Solution: Multi-stage React/Nginx Dockerfile
+
+# --- Stage 1: Build Stage ---
+# We use node:18-alpine because it ALREADY has node and npm installed!
+FROM node:18-alpine AS build_stage
+
+# This is like "cd /app". It creates a separate room for our project 
+# so it doesn't get mixed with base system files.
+WORKDIR /app
+
+# Install dependencies separately to cache this layer
+COPY package*.json ./
+RUN npm install
+
+# Copy all code and build the project
+COPY . .
+RUN npm run build
+
+# --- Stage 2: Production Stage ---
+FROM nginx:stable-alpine
+
+# Use the "Finished product" from our first box (Stage 1) 
+# and put it into the "Serving box" (Nginx).
+COPY --from=build_stage /app/dist /usr/share/nginx/html
+
+# Expose Nginx's default port
+EXPOSE 80
+
+# This is the "Start Button". 
+# "daemon off" keeps Nginx running in the front so the container stays alive.
+CMD ["nginx", "-g", "daemon off;"]
