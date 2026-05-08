@@ -9,9 +9,20 @@ services:
     volumes:
       - mongo_data:/data/db
 
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
   backend:
     build: ./backend
     environment:
+      MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017/foodapp}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
+      SALT: ${SALT:-10}
       MONGO_URL: ${MONGO_URL:-mongodb://mongo:27017/foodapp}
       JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
       SALT: ${SALT:-10}
@@ -41,6 +52,7 @@ services:
       args:
         VITE_BACKEND_URL: http://13.63.130.174:8081
     ports:
+      - "8081:80"
       - "8081:80"
     depends_on:
       - backend
